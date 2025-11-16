@@ -1,13 +1,55 @@
 <!doctype html>
 <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Explorador Cauteloso</title>
-        <link rel="stylesheet" href="assets/css/style.css" />
-    </head>
 
-    <body>
-        <script src="assets/js/script.js"></script>
-    </body>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Explorador Cauteloso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+    <div class="w-full max-w-4xl">
+        <h1 class="text-3xl sm:text-4xl font-medium text-gray-800 mb-6 sm:mb-8">Explorador Cauteloso</h1>
+
+        <div
+            class="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-8 mb-6 text-sm w-full">
+            <div class="flex items-center gap-2">
+                <span class="text-gray-500">Fase</span>
+                <span class="font-mono text-gray-800" id="fase">0</span>
+            </div>
+
+            <div class="flex items-center gap-4 sm:gap-8">
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500">Vida</span>
+                    <span class="font-mono text-gray-800" id="vida">0</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500">Moedas</span>
+                    <span class="font-mono text-gray-800" id="moedas">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-lg aspect-video mb-6 overflow-hidden shadow-sm">
+            <canvas id="canvas" class="w-full h-full"></canvas>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button id="iniciar"
+                class="w-full sm:w-auto flex-1 bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-sm">
+                Iniciar
+            </button>
+
+            <button id="resetar"
+                class="w-full sm:w-auto flex-1 bg-white hover:bg-gray-50 text-gray-800 font-medium py-3 px-6 rounded-lg border border-gray-200 transition-colors shadow-sm">
+                Resetar
+            </button>
+        </div>
+    </div>
+
+    <script src="assets/js/script.js"></script>
+</body>
+
 </html>
