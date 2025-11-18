@@ -53,6 +53,42 @@ class Labirinto {
 
             this.grid.push(linha);
         }
+
+        this.gerarArvoreBinaria();
+    }
+
+    gerarArvoreBinaria() {
+        const inicioX = 1;
+        const inicioY = 1;
+
+        this.grid[inicioY][inicioX].tipo = 'caminho';
+        this.grid[inicioY][inicioX].visitada = true;
+
+        for (let y = 1; y < this.altura; y += 2) {
+            for (let x = 1; x < this.largura; x += 2) {
+                this.grid[y][x].tipo = 'caminho';
+
+                const direcoes = [];
+
+                if (y > 1) {
+                    direcoes.push({ dx: 0, dy: -1 });
+                }
+
+                if (x > 1) {
+                    direcoes.push({ dx: -1, dy: 0 });
+                }
+
+                if (direcoes.length > 0) {
+                    const direcao = direcoes[Math.floor(Math.random() * direcoes.length)];
+                    const paredeX = x + direcao.dx;
+                    const paredeY = y + direcao.dy;
+                    this.grid[paredeY][paredeX].tipo = 'caminho';
+                }
+            }
+        }
+
+        this.grid[1][1].tipo = 'inicio';
+        this.grid[this.altura - 2][this.largura - 2].tipo = 'fim';
     }
 
     desenhar() {
