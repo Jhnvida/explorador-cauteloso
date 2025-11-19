@@ -56,37 +56,55 @@ class Labirinto {
             this.grid.push(linha);
         }
 
-        this.gerarArvoreBinaria();
+        this.gerarDFS();
     }
 
-    gerarArvoreBinaria() {
+    gerarDFS() {
+        const pilha = [];
         const inicio_x = 1;
         const inicio_y = 1;
 
         this.grid[inicio_y][inicio_x].tipo = 'caminho';
         this.grid[inicio_y][inicio_x].visitada = true;
+        pilha.push(this.grid[inicio_y][inicio_x]);
 
-        for (let y = 1; y < this.altura; y += 2) {
-            for (let x = 1; x < this.largura; x += 2) {
-                this.grid[y][x].tipo = 'caminho';
+        while (pilha.length > 0) {
+            const atual = pilha[pilha.length - 1];
+            const x = atual.x;
+            const y = atual.y;
 
-                const direcoes = [];
+            const vizinhos = [];
 
-                if (y > 1) {
-                    direcoes.push({ dx: 0, dy: -1 });
+            const direcoes = [
+                { dx: 0, dy: -2 },
+                { dx: 0, dy: 2 },
+                { dx: -2, dy: 0 },
+                { dx: 2, dy: 0 }
+            ];
+
+            for (const dir of direcoes) {
+                const viz_x = x + dir.dx;
+                const viz_y = y + dir.dy;
+
+                if (viz_x > 0 && viz_x < this.largura - 1 && viz_y > 0 && viz_y < this.altura - 1) {
+                    const vizinho = this.grid[viz_y][viz_x];
+                    if (!vizinho.visitada) {
+                        vizinhos.push({ vizinho: vizinho, parede_x: x + dir.dx / 2, parede_y: y + dir.dy / 2 });
+                    }
                 }
+            }
 
-                if (x > 1) {
-                    direcoes.push({ dx: -1, dy: 0 });
-                }
+            if (vizinhos.length > 0) {
+                const { vizinho, parede_x, parede_y } = vizinhos[Math.floor(Math.random() * vizinhos.length)];
 
-                if (direcoes.length > 0) {
-                    const direcao = direcoes[Math.floor(Math.random() * direcoes.length)];
-                    const parede_x = x + direcao.dx;
-                    const parede_y = y + direcao.dy;
+                this.grid[parede_y][parede_x].tipo = 'caminho';
 
-                    this.grid[parede_y][parede_x].tipo = 'caminho';
-                }
+                vizinho.visitada = true;
+                vizinho.tipo = 'caminho';
+
+                pilha.push(vizinho);
+            } else {
+                pilha.pop();
             }
         }
 
