@@ -17,6 +17,85 @@ const altura_grid = 45;
 canvas.width = largura_grid * tamanho_celula;
 canvas.height = altura_grid * tamanho_celula;
 
+class Jogador {
+    constructor(vida_inicial = 100) {
+        this.vida_maxima = vida_inicial;
+        this.vida_atual = vida_inicial;
+        this.fase_atual = 1;
+        this.vivo = true;
+
+        this.atualizarInterface();
+    }
+
+    atualizarInterface() {
+        document.getElementById('fase').textContent = this.fase_atual;
+        document.getElementById('vida').textContent = this.vida_atual;
+    }
+
+    processarCelula(celula) {
+        if (!this.vivo) return false;
+
+        switch (celula.tipo) {
+            case 'monstro':
+                this.receberDano(10);
+                break;
+            case 'vida':
+                this.curar(15);
+                break;
+        }
+
+        return this.vivo;
+    }
+
+    receberDano(quantidade) {
+        this.vida_atual -= quantidade;
+
+        if (this.vida_atual <= 0) {
+            this.vida_atual = 0;
+            this.vivo = false;
+        }
+
+        this.atualizarInterface();
+    }
+
+    curar(quantidade) {
+        this.vida_atual += quantidade;
+
+        if (this.vida_atual > this.vida_maxima) {
+            this.vida_atual = this.vida_maxima;
+        }
+
+        this.atualizarInterface();
+    }
+
+    proximaFase() {
+        if (!this.vivo) return false;
+
+        this.fase_atual++;
+        this.atualizarInterface();
+        return true;
+    }
+
+    estaVivo() {
+        return this.vivo;
+    }
+
+    resetar() {
+        this.vida_atual = this.vida_maxima;
+        this.fase_atual = 1;
+        this.vivo = true;
+        this.atualizarInterface();
+    }
+
+    pegarVida() {
+        return this.vida_atual;
+    }
+
+    pegarFase() {
+        return this.fase_atual;
+    }
+}
+
 class Celula {
     constructor(x, y) {
         this.x = x;
@@ -88,6 +167,7 @@ class Labirinto {
 
                 if (viz_x > 0 && viz_x < this.largura - 1 && viz_y > 0 && viz_y < this.altura - 1) {
                     const vizinho = this.grid[viz_y][viz_x];
+
                     if (!vizinho.visitada) {
                         vizinhos.push({ vizinho: vizinho, parede_x: x + dir.dx / 2, parede_y: y + dir.dy / 2 });
                     }
@@ -158,4 +238,6 @@ class Labirinto {
 }
 
 const labirinto = new Labirinto(largura_grid, altura_grid);
+const jogador = new Jogador(100);
+
 labirinto.desenhar();
