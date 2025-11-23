@@ -1,6 +1,11 @@
 const canvas = document.getElementById('canvas');
 const context = canvas.getContext('2d');
 
+const elemento_fase = document.getElementById('fase');
+const elemento_vida = document.getElementById('vida');
+const botao_iniciar = document.getElementById('iniciar');
+const botao_resetar = document.getElementById('resetar');
+
 const cores = {
     parede: '#4b5563',
     caminho: '#f3f4f6',
@@ -35,14 +40,8 @@ class Jogador {
     processarCelula(celula) {
         if (!this.vivo) return false;
 
-        switch (celula.tipo) {
-            case 'monstro':
-                this.receberDano(10);
-                break;
-            case 'vida':
-                this.curar(15);
-                break;
-        }
+        if (celula.tipo == 'monstro') this.receberDano(10);
+        if (celula.tipo == 'vida') this.curar(15);
 
         return this.vivo;
     }
@@ -207,7 +206,7 @@ class Labirinto {
             }
         }
 
-        const porcentagem_monstros = 0.01;
+        const porcentagem_monstros = 0.02;
         const porcentagem_vidas = 0.01;
 
         for (let i = celulas_vazias.length - 1; i > 0; i--) {
@@ -237,7 +236,76 @@ class Labirinto {
     }
 }
 
+function buscarCaminho(labirinto, inicio, fim) {
+    const visitado = new Set();
+    const caminho = [];
+
+    function dfs(x, y) {
+        const chave = `${x},${y}`;
+        if (visitado.has(chave)) return false;
+        visitado.add(chave);
+
+        const celula = labirinto.grid[y][x];
+        if (celula.tipo === 'parede') return false;
+
+        caminho.push(celula);
+
+        if (x === fim.x && y === fim.y) return true;
+
+        const direcoes = [
+            { dx: 0, dy: -1 },
+            { dx: 1, dy: 0 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 }
+        ];
+
+        for (const d of direcoes) {
+            const nx = x + d.dx;
+            const ny = y + d.dy;
+
+            if (nx >= 0 && nx < labirinto.largura && ny >= 0 && ny < labirinto.altura) {
+                if (dfs(nx, ny)) return true;
+            }
+        }
+
+        caminho.pop();
+        return false;
+    }
+
+    return dfs(inicio.x, inicio.y) ? caminho : null;
+}
+
+function animarCaminho(caminho, i = 0) {
+    if (i >= caminho.length) return;
+
+    const cel = caminho[i];
+
+    labirinto.desenhar();
+    context.fillStyle = "#3b82f6";
+    context.fillRect(
+        cel.x * tamanho_celula,
+        cel.y * tamanho_celula,
+        tamanho_celula,
+        tamanho_celula
+    );
+
+    setTimeout(() => animarCaminho(caminho, i + 1), 40);
+}
+
 const labirinto = new Labirinto(largura_grid, altura_grid);
 const jogador = new Jogador(100);
 
 labirinto.desenhar();
+
+botao_iniciar.addEventListener("click", () => {
+    const inicio = { x: 1, y: 1 };
+    const fim = { x: labirinto.largura - 2, y: labirinto.altura - 2 };
+    const caminho = buscarCaminho(labirinto, inicio, fim);
+
+    if (!caminho) {
+        alert("Nenhum caminho encontrado!");
+        return;
+    }
+
+    animarCaminho(caminho);
+});
