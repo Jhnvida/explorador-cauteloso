@@ -12,7 +12,8 @@ const cores = {
     inicio: '#10b981',
     fim: '#ef4444',
     monstro: '#b91c1c',
-    vida: '#22c55e'
+    vida: '#22c55e',
+    rastro: '#3b82f6'
 };
 
 const tamanho_celula = 10;
@@ -23,31 +24,30 @@ canvas.width = largura_grid * tamanho_celula;
 canvas.height = altura_grid * tamanho_celula;
 
 class Jogador {
-    constructor(vida_inicial = 100) {
+    constructor(vida_inicial) {
         this.vida_maxima = vida_inicial;
         this.vida_atual = vida_inicial;
         this.fase_atual = 1;
         this.vivo = true;
-
         this.atualizarInterface();
     }
 
     atualizarInterface() {
-        document.getElementById('fase').textContent = this.fase_atual;
-        document.getElementById('vida').textContent = this.vida_atual;
+        elemento_fase.textContent = this.fase_atual;
+        elemento_vida.textContent = this.vida_atual;
     }
 
-    processarCelula(celula) {
-        if (!this.vivo) return false;
+    interagir(celula) {
+        if (!this.vivo) return;
 
-        if (celula.tipo == 'monstro') this.receberDano(10);
-        if (celula.tipo == 'vida') this.curar(15);
-
-        return this.vivo;
-    }
-
-    receberDano(quantidade) {
-        this.vida_atual -= quantidade;
+        if (celula.tipo === 'monstro') {
+            this.vida_atual -= 15;
+        } else if (celula.tipo === 'vida') {
+            this.vida_atual += 10;
+            if (this.vida_atual > this.vida_maxima) {
+                this.vida_atual = this.vida_maxima;
+            }
+        }
 
         if (this.vida_atual <= 0) {
             this.vida_atual = 0;
@@ -57,26 +57,9 @@ class Jogador {
         this.atualizarInterface();
     }
 
-    curar(quantidade) {
-        this.vida_atual += quantidade;
-
-        if (this.vida_atual > this.vida_maxima) {
-            this.vida_atual = this.vida_maxima;
-        }
-
-        this.atualizarInterface();
-    }
-
-    proximaFase() {
-        if (!this.vivo) return false;
-
+    subirFase() {
         this.fase_atual++;
         this.atualizarInterface();
-        return true;
-    }
-
-    estaVivo() {
-        return this.vivo;
     }
 
     resetar() {
@@ -84,14 +67,6 @@ class Jogador {
         this.fase_atual = 1;
         this.vivo = true;
         this.atualizarInterface();
-    }
-
-    pegarVida() {
-        return this.vida_atual;
-    }
-
-    pegarFase() {
-        return this.fase_atual;
     }
 }
 
@@ -105,7 +80,12 @@ class Celula {
 
     desenhar() {
         context.fillStyle = cores[this.tipo];
-        context.fillRect(this.x * tamanho_celula, this.y * tamanho_celula, tamanho_celula, tamanho_celula);
+        context.fillRect(
+            this.x * tamanho_celula,
+            this.y * tamanho_celula,
+            tamanho_celula,
+            tamanho_celula
+        );
     }
 }
 
@@ -114,21 +94,17 @@ class Labirinto {
         this.largura = largura;
         this.altura = altura;
         this.grid = [];
-        this.fronteiras = [];
-
         this.criarGrid();
     }
 
     criarGrid() {
         this.grid = [];
-        this.fronteiras = [];
 
         for (let y = 0; y < this.altura; y++) {
-            const linha = [];
+            let linha = [];
 
             for (let x = 0; x < this.largura; x++) {
-                const celula = new Celula(x, y);
-                linha.push(celula);
+                linha.push(new Celula(x, y));
             }
 
             this.grid.push(linha);
@@ -138,50 +114,53 @@ class Labirinto {
     }
 
     gerarDFS() {
-        const pilha = [];
-        const inicio_x = 1;
-        const inicio_y = 1;
+        let pilha = [];
+        let inicio_x = 1;
+        let inicio_y = 1;
 
         this.grid[inicio_y][inicio_x].tipo = 'caminho';
         this.grid[inicio_y][inicio_x].visitada = true;
         pilha.push(this.grid[inicio_y][inicio_x]);
 
         while (pilha.length > 0) {
-            const atual = pilha[pilha.length - 1];
-            const x = atual.x;
-            const y = atual.y;
+            let atual = pilha[pilha.length - 1];
+            let vizinhos = [];
 
-            const vizinhos = [];
-
-            const direcoes = [
+            let direcoes = [
                 { dx: 0, dy: -2 },
                 { dx: 0, dy: 2 },
                 { dx: -2, dy: 0 },
                 { dx: 2, dy: 0 }
             ];
 
-            for (const dir of direcoes) {
-                const viz_x = x + dir.dx;
-                const viz_y = y + dir.dy;
+            for (let i = 0; i < direcoes.length; i++) {
+                let dir = direcoes[i];
+                let viz_x = atual.x + dir.dx;
+                let viz_y = atual.y + dir.dy;
 
-                if (viz_x > 0 && viz_x < this.largura - 1 && viz_y > 0 && viz_y < this.altura - 1) {
-                    const vizinho = this.grid[viz_y][viz_x];
+                if (viz_x > 0 && viz_x < this.largura - 1 &&
+                    viz_y > 0 && viz_y < this.altura - 1) {
+
+                    let vizinho = this.grid[viz_y][viz_x];
 
                     if (!vizinho.visitada) {
-                        vizinhos.push({ vizinho: vizinho, parede_x: x + dir.dx / 2, parede_y: y + dir.dy / 2 });
+                        vizinhos.push({
+                            vizinho: vizinho,
+                            parede_x: atual.x + dir.dx / 2,
+                            parede_y: atual.y + dir.dy / 2
+                        });
                     }
                 }
             }
 
             if (vizinhos.length > 0) {
-                const { vizinho, parede_x, parede_y } = vizinhos[Math.floor(Math.random() * vizinhos.length)];
+                let indice = Math.floor(Math.random() * vizinhos.length);
+                let escolhido = vizinhos[indice];
 
-                this.grid[parede_y][parede_x].tipo = 'caminho';
-
-                vizinho.visitada = true;
-                vizinho.tipo = 'caminho';
-
-                pilha.push(vizinho);
+                this.grid[escolhido.parede_y][escolhido.parede_x].tipo = 'caminho';
+                escolhido.vizinho.visitada = true;
+                escolhido.vizinho.tipo = 'caminho';
+                pilha.push(escolhido.vizinho);
             } else {
                 pilha.pop();
             }
@@ -194,34 +173,33 @@ class Labirinto {
     }
 
     criarElementos() {
-        const celulas_vazias = [];
+        let vazias = [];
 
         for (let y = 0; y < this.altura; y++) {
             for (let x = 0; x < this.largura; x++) {
-                const celula = this.grid[y][x];
-
-                if (celula.tipo === 'caminho') {
-                    celulas_vazias.push(celula);
+                if (this.grid[y][x].tipo === 'caminho') {
+                    vazias.push(this.grid[y][x]);
                 }
             }
         }
 
-        const porcentagem_monstros = 0.02;
-        const porcentagem_vidas = 0.01;
+        for (let i = vazias.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = vazias[i];
 
-        for (let i = celulas_vazias.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [celulas_vazias[i], celulas_vazias[j]] = [celulas_vazias[j], celulas_vazias[i]];
+            vazias[i] = vazias[j];
+            vazias[j] = temp;
         }
 
-        const quantidade_monstros = Math.floor(celulas_vazias.length * porcentagem_monstros);
+        let quantidade_monstros = Math.floor(vazias.length * 0.01);
+        let quantidade_vidas = Math.floor(vazias.length * 0.01);
+
         for (let i = 0; i < quantidade_monstros; i++) {
-            celulas_vazias[i].tipo = 'monstro';
+            vazias[i].tipo = 'monstro';
         }
 
-        const quantidade_vidas = Math.floor(celulas_vazias.length * porcentagem_vidas);
         for (let i = quantidade_monstros; i < quantidade_monstros + quantidade_vidas; i++) {
-            celulas_vazias[i].tipo = 'vida';
+            vazias[i].tipo = 'vida';
         }
     }
 
@@ -237,75 +215,138 @@ class Labirinto {
 }
 
 function buscarCaminho(labirinto, inicio, fim) {
-    const visitado = new Set();
-    const caminho = [];
+    let visitado = [];
 
-    function dfs(x, y) {
-        const chave = `${x},${y}`;
-        if (visitado.has(chave)) return false;
-        visitado.add(chave);
+    for (let y = 0; y < altura_grid; y++) {
+        let linha = [];
 
-        const celula = labirinto.grid[y][x];
+        for (let x = 0; x < largura_grid; x++) {
+            linha.push(false);
+        }
+
+        visitado.push(linha);
+    }
+
+    let caminho = [];
+
+    function procurar(x, y) {
+        if (visitado[y][x]) return false;
+        visitado[y][x] = true;
+
+        let celula = labirinto.grid[y][x];
         if (celula.tipo === 'parede') return false;
 
         caminho.push(celula);
 
         if (x === fim.x && y === fim.y) return true;
 
-        const direcoes = [
+        let direcoes = [
             { dx: 0, dy: -1 },
             { dx: 1, dy: 0 },
             { dx: 0, dy: 1 },
             { dx: -1, dy: 0 }
         ];
 
-        for (const d of direcoes) {
-            const nx = x + d.dx;
-            const ny = y + d.dy;
+        for (let i = direcoes.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            let temp = direcoes[i];
 
-            if (nx >= 0 && nx < labirinto.largura && ny >= 0 && ny < labirinto.altura) {
-                if (dfs(nx, ny)) return true;
-            }
+            direcoes[i] = direcoes[j];
+            direcoes[j] = temp;
+        }
+
+        for (let i = 0; i < direcoes.length; i++) {
+            let d = direcoes[i];
+            if (procurar(x + d.dx, y + d.dy)) return true;
         }
 
         caminho.pop();
         return false;
     }
 
-    return dfs(inicio.x, inicio.y) ? caminho : null;
+    if (procurar(inicio.x, inicio.y)) {
+        return caminho;
+    }
+
+    return null;
 }
 
-function animarCaminho(caminho, i = 0) {
-    if (i >= caminho.length) return;
+let animacao_id = null;
 
-    const cel = caminho[i];
+function animarCaminho(caminho, i) {
+    if (i >= caminho.length) {
+        jogador.subirFase();
+        labirinto = new Labirinto(largura_grid, altura_grid);
+        labirinto.desenhar();
+        botao_iniciar.disabled = false;
+        botao_iniciar.textContent = "Iniciar";
 
-    labirinto.desenhar();
-    context.fillStyle = "#3b82f6";
+        return;
+    }
+
+    let celula = caminho[i];
+    jogador.interagir(celula);
+
+    if (!jogador.vivo) {
+        context.fillStyle = cores.rastro;
+        context.fillRect(
+            celula.x * tamanho_celula,
+            celula.y * tamanho_celula,
+            tamanho_celula,
+            tamanho_celula
+        );
+
+        jogador.resetar();
+        labirinto = new Labirinto(largura_grid, altura_grid);
+        labirinto.desenhar();
+        botao_iniciar.disabled = false;
+        botao_iniciar.textContent = "Iniciar";
+
+        return;
+    }
+
+    context.fillStyle = cores.rastro;
     context.fillRect(
-        cel.x * tamanho_celula,
-        cel.y * tamanho_celula,
+        celula.x * tamanho_celula,
+        celula.y * tamanho_celula,
         tamanho_celula,
         tamanho_celula
     );
 
-    setTimeout(() => animarCaminho(caminho, i + 1), 40);
+    animacao_id = setTimeout(function () {
+        animarCaminho(caminho, i + 1);
+    }, 25);
 }
 
-const labirinto = new Labirinto(largura_grid, altura_grid);
-const jogador = new Jogador(100);
-
+let labirinto = new Labirinto(largura_grid, altura_grid);
+let jogador = new Jogador(100);
 labirinto.desenhar();
 
-botao_iniciar.addEventListener("click", () => {
-    const inicio = { x: 1, y: 1 };
-    const fim = { x: labirinto.largura - 2, y: labirinto.altura - 2 };
-    const caminho = buscarCaminho(labirinto, inicio, fim);
+botao_iniciar.addEventListener("click", function () {
+    let inicio = { x: 1, y: 1 };
+    let fim = { x: labirinto.largura - 2, y: labirinto.altura - 2 };
+    let caminho = buscarCaminho(labirinto, inicio, fim);
 
     if (!caminho) {
-        alert("Nenhum caminho encontrado!");
+        labirinto = new Labirinto(largura_grid, altura_grid);
+        labirinto.desenhar();
         return;
     }
 
-    animarCaminho(caminho);
+    botao_iniciar.disabled = true;
+    botao_iniciar.textContent = "Explorando...";
+
+    labirinto.desenhar();
+    animarCaminho(caminho, 0);
+});
+
+botao_resetar.addEventListener("click", function () {
+    clearTimeout(animacao_id);
+
+    jogador.resetar();
+    labirinto = new Labirinto(largura_grid, altura_grid);
+    labirinto.desenhar();
+
+    botao_iniciar.disabled = false;
+    botao_iniciar.textContent = "Iniciar";
 });
